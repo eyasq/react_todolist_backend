@@ -86,11 +86,10 @@ def editTodo(request):
         return JsonResponse({"message":"Invalid Request Type"},status=405)
 
 @csrf_exempt 
-def deleteTodo(request):
+def deleteTodo(request, id):
     if request.method=="DELETE":
         try:
-            data = json.loads(request.body.decode("utf-8"))
-            todo = Todo.objects.get(id = data.get("id"))
+            todo = Todo.objects.get(id = id)
             todo.delete()
             return JsonResponse({"message":"Record Successfully Deleted"}, status = 200)
         except Todo.DoesNotExist:
