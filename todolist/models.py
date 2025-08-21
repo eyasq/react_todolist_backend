@@ -13,5 +13,5 @@ class Todo(models.Model):
     completed = models.BooleanField(default=False)
     due_by = models.DateField()
     created_at = models.DateField(auto_now_add=True)
-    user= models.ForeignKey(User, on_delete=models.CASCADE, related_name="todos")
+    user= models.ForeignKey(User, on_delete=models.CASCADE, related_name="todos", blank=True, null=True)
 
