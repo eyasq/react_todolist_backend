@@ -98,6 +98,34 @@ def deleteTodo(request, id):
             return JsonResponse({"message":e})
     else:
         return JsonResponse({"message":"Invalid request Type"})
+    
+def getTodo(request,id):
+    if request.method=="GET":
+        try:
+            currTodo=Todo.objects.get(id=id)
+            
+            return JsonResponse({
+                    "todo": {
+                        "id": currTodo.id,
+                        "title": currTodo.title,
+                        "notes": currTodo.notes,
+                        "important": currTodo.important,
+                        "due_by": currTodo.due_by,
+                        "completed": currTodo.completed,
+                        "created_at": currTodo.created_at
+                    }
+                }, status=200)
+
+        
+        except Todo.DoesNotExist:
+            return JsonResponse({"error":"Todo does not exist!"})
+
+        except Exception as e:
+            return JsonResponse({"error":e})
+
+
+
+
 #         {
 #     "message": "Todo succesfully created!!",
 #     "todo": {

@@ -24,5 +24,6 @@ urlpatterns = [
     path("api/post", views.add_todo),
     path("api/get",views.getTodos),
     path("api/delete/<str:id>",views.deleteTodo),
-    path("api/edit/<str:id>",views.editTodo)
+    path("api/edit/<str:id>",views.editTodo),
+    path("api/get/<str:id>", views.getTodo)
 ]
