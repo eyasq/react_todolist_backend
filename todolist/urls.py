@@ -22,5 +22,7 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     path("", views.index),
     path("api/post", views.add_todo),
-    path("api/get",views.getTodos)
+    path("api/get",views.getTodos),
+    path("api/delete",views.deleteTodo),
+    path("api/edit",views.editTodo)
 ]
