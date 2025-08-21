@@ -1,8 +1,7 @@
 import json
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-
+from django.middleware.csrf import get_token
 from .models import Todo
 
 # Create your views here.
@@ -12,7 +11,6 @@ def index(request):
         return JsonResponse({"res":"Request Method was get"})
     else:
         return HttpResponse("Not a get")
-@csrf_exempt 
 def add_todo(request):
     if request.method == "POST":
         try:
@@ -54,7 +52,18 @@ def getTodos(request):
     else:
         return JsonResponse({"message":"Invalid Request Type"})
         
-@csrf_exempt 
+def getCompletedTodos(request):
+    if request.method == 'GET':
+        try:
+            todos = Todo.objects.filter(completed=True).values("id","title", "important","due_by","created_at","notes", "completed")
+            return JsonResponse(list(todos), safe=False, status=200)
+        
+        except Exception as e:
+            return JsonResponse({"error":e}, status=400)
+    else:
+        return JsonResponse({"message":"Invalid Request Type"})
+
+
 def editTodo(request,id):
     if request.method == 'PUT': 
         try:
@@ -85,7 +94,6 @@ def editTodo(request,id):
     else:
         return JsonResponse({"message":"Invalid Request Type"},status=405)
 
-@csrf_exempt 
 def deleteTodo(request, id):
     if request.method=="DELETE":
         try:
@@ -122,6 +130,13 @@ def getTodo(request,id):
 
         except Exception as e:
             return JsonResponse({"error":e})
+
+
+def getCSRF(request):
+    return JsonResponse({
+        "csrfToken":get_token(request)
+    })
+
 
 
 

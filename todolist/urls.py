@@ -25,5 +25,8 @@ urlpatterns = [
     path("api/get",views.getTodos),
     path("api/delete/<str:id>",views.deleteTodo),
     path("api/edit/<str:id>",views.editTodo),
-    path("api/get/<str:id>", views.getTodo)
+    path("api/get/completed", views.getCompletedTodos),
+    path("api/get/<str:id>", views.getTodo),
+    path("api/getCSRF", views.getCSRF)
+    
 ]
