@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.middleware.csrf import get_token
 from .models import Todo
-
+from django.contrib.auth.models import User
 # Create your views here.
 
 def index(request):
@@ -137,6 +137,12 @@ def getCSRF(request):
         "csrfToken":get_token(request)
     })
 
+########AUTH#################
+
+# def register_user(request):
+#     if request.method == "POST":
+#         data = json.loads(request.body.decode("utf-8"))
+#         user = User.objects.create_user(data.get("username"), data.get("email"), data.get("password"))
 
 
 
