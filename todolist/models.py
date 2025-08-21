@@ -10,5 +10,6 @@ class Todo(models.Model):
     title= models.CharField(max_length=100)
     notes = models.CharField(max_length=255, blank=True)
     important = models.BooleanField(default=False)
+    completed = models.BooleanField(default=False)
     due_by = models.DateField()
     created_at = models.DateField(auto_now_add=True)

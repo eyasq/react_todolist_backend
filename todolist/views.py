@@ -46,7 +46,7 @@ def add_todo(request):
 def getTodos(request):
     if request.method == 'GET':
         try:
-            todos = Todo.objects.all().values("id","title", "important","due_by","created_at","notes")
+            todos = Todo.objects.all().values("id","title", "important","due_by","created_at","notes", "completed")
             return JsonResponse(list(todos), safe=False, status=200)
         
         except Exception as e:
@@ -55,11 +55,11 @@ def getTodos(request):
         return JsonResponse({"message":"Invalid Request Type"})
         
 @csrf_exempt 
-def editTodo(request):
+def editTodo(request,id):
     if request.method == 'PUT': 
         try:
             data = json.loads(request.body.decode("utf-8"))
-            id = data.get("id")
+            id = id
             todo = Todo.objects.get(id=id)
             todo.title = data.get('title', todo.title)
             todo.notes = data.get('notes', todo.notes)
