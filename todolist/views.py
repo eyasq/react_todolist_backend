@@ -54,7 +54,7 @@ def getTodos(request):
     else:
         return JsonResponse({"message":"Invalid Request Type"})
         
-
+@csrf_exempt 
 def editTodo(request):
     if request.method == 'PUT': 
         try:
@@ -85,7 +85,7 @@ def editTodo(request):
     else:
         return JsonResponse({"message":"Invalid Request Type"},status=405)
 
-
+@csrf_exempt 
 def deleteTodo(request):
     if request.method=="DELETE":
         try:
