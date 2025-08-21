@@ -36,7 +36,7 @@ def add_todo(request):
                     "created_at":todo.created_at
                 }
             }, status=201)
-        
+
         except Exception as e:
             return JsonResponse({"error":str(e)}, status=400)
     else:
@@ -51,3 +51,62 @@ def getTodos(request):
         
         except Exception as e:
             return JsonResponse({"error":e}, status=400)
+    else:
+        return JsonResponse({"message":"Invalid Request Type"})
+        
+
+def editTodo(request):
+    if request.method == 'PUT': 
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            id = data.get("id")
+            todo = Todo.objects.get(id=id)
+            todo.title = data.get('title', todo.title)
+            todo.notes = data.get('notes', todo.notes)
+            todo.important = data.get('important', todo.important)
+            todo.due_by = data.get('due_by', todo.due_by)
+            todo.completed = data.get('completed', todo.completed)
+            todo.save()
+            return JsonResponse({
+                "message":"Todo succesffully updated",
+                "todo":{
+                    "id":todo.id,
+                    "title":todo.title,
+                    "notes":todo.notes,
+                    "important":todo.important,
+                    "due_by":todo.due_by,
+                    "completed":todo.completed
+                }
+            }, status=200)
+        except Todo.DoesNotExist:
+            return JsonResponse({"error":"Todo does not exist"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error":str(e)}, status=400)
+    else:
+        return JsonResponse({"message":"Invalid Request Type"},status=405)
+
+
+def deleteTodo(request):
+    if request.method=="DELETE":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            todo = Todo.objects.get(id = data.get("id"))
+            todo.delete()
+            return JsonResponse({"message":"Record Successfully Deleted"}, status = 200)
+        except Todo.DoesNotExist:
+            return JsonResponse({"error":"Todo does not exist"}, status=404)
+        except Exception as e:
+            return JsonResponse({"message":e})
+    else:
+        return JsonResponse({"message":"Invalid request Type"})
+#         {
+#     "message": "Todo succesfully created!!",
+#     "todo": {
+#         "id": "0000-0000-0000-0000-0000-1111",
+#         "title": "Integrate Django With React", SAMPLE FOR HOW TODO SHOULD LOOK
+#         "notes": "",
+#         "important": "True",
+#         "due_by": "2025-08-21",
+#         "created_at": "2025-08-21"
+#     }
+# }
