@@ -1,9 +1,13 @@
 import json
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
 from django.middleware.csrf import get_token
 from .models import Todo
 from django.contrib.auth.models import User
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
 # Create your views here.
 
 def index(request):
@@ -139,11 +143,26 @@ def getCSRF(request):
 
 ########AUTH#################
 
-# def register_user(request):
-#     if request.method == "POST":
-#         data = json.loads(request.body.decode("utf-8"))
-#         user = User.objects.create_user(data.get("username"), data.get("email"), data.get("password"))
+class RegisterView(APIView):
+    permission_classes=[AllowAny]
 
+    def post(self,request):
+        if request.method == "POST":
+            try:
+                data = json.loads(request.body.decode("utf-8"))
+                username = data.get("username")
+                email = data.get("email")
+                password = data.get('password')
+                if not username or not password:
+                    return JsonResponse({"error":"Missing fields"}, status=404)
+                if User.objects.filter(username=username).exists():
+                    return JsonResponse({"error":"User with this username already exists"}, status=400)
+                user = User(username=username, email=email)
+                user.set_password(password)
+                user.save()
+                return Response({"message":"User successfully created"}, status=201)
+            except Exception as e:
+                return JsonResponse({"Error":"Something went wrong in the registry process."})
 
 
 
