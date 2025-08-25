@@ -3,11 +3,19 @@ from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from .models import Todo
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+
+
 # Create your views here.
 
 def index(request):
@@ -15,35 +23,43 @@ def index(request):
         return JsonResponse({"res":"Request Method was get"})
     else:
         return HttpResponse("Not a get")
+    
+@login_required
 def add_todo(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
+    if request.user:
+        if request.method == "POST":
+            try:
+                data = json.loads(request.body.decode("utf-8"))
 
-            todo = Todo.objects.create(
-                id = data.get("id"),
-                title = data.get("title"),
-                notes = data.get("notes" , ""),
-                important=data.get("important", False),
-                due_by = data.get("due_by")
-                )
-            return JsonResponse({
-                "message":"Todo succesfully created!!",
-                "todo":{
-                    "id":todo.id,
-                    "title":todo.title,
-                    "notes":todo.notes,
-                    "important":todo.important,
-                    "due_by":todo.due_by,
-                    "created_at":todo.created_at
-                }
-            }, status=201)
+                todo = Todo.objects.create(
+                    id = data.get("id"),
+                    title = data.get("title"),
+                    notes = data.get("notes" , ""),
+                    important=data.get("important", False),
+                    due_by = data.get("due_by"),
+                    user = request.user
+                    )
+                return JsonResponse({
+                    "message":"Todo succesfully created!!",
+                    "todo":{
+                        "id":todo.id,
+                        "title":todo.title,
+                        "notes":todo.notes,
+                        "important":todo.important,
+                        "due_by":todo.due_by,
+                        "created_at":todo.created_at,
+                        "owener": todo.user
+                    }
+                }, status=201)
 
-        except Exception as e:
-            return JsonResponse({"error":str(e)}, status=400)
+            except Exception as e:
+                return JsonResponse({"error":str(e)}, status=400)
+        else:
+            return JsonResponse({"error":"invalid request method"}, status=405)
     else:
-        return JsonResponse({"error":"invalid request method"}, status=405)
-        
+        return JsonResponse({
+            "error":"Not Signed In"
+        })    
 
 def getTodos(request):
     if request.method == 'GET':
@@ -143,8 +159,10 @@ def getCSRF(request):
 
 ########AUTH#################
 
+
+
 class RegisterView(APIView):
-    permission_classes=[AllowAny]
+    permission_classes=[IsAuthenticated]
 
     def post(self,request):
         if request.method == "POST":
@@ -154,26 +172,79 @@ class RegisterView(APIView):
                 email = data.get("email")
                 password = data.get('password')
                 if not username or not password:
-                    return JsonResponse({"error":"Missing fields"}, status=404)
+                    return Response({"error":"Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
                 if User.objects.filter(username=username).exists():
-                    return JsonResponse({"error":"User with this username already exists"}, status=400)
+                    return Response({"error":"User with this username already exists"}, status=status.HTTP_400_BAD_REQUEST)
                 user = User(username=username, email=email)
                 user.set_password(password)
                 user.save()
-                return Response({"message":"User successfully created"}, status=201)
+                return Response({"message":"User successfully created"}, status=status.HTTP_201_CREATED)
             except Exception as e:
-                return JsonResponse({"Error":"Something went wrong in the registry process."})
+                return Response({"Error":"Something went wrong in the registry process."})
+
+    def get(self,request):
+        return Response("Request method not allowed", status=status.HTTP_403_FORBIDDEN)
+    
+
+class LoginView(APIView):
+    permission_classes=[AllowAny]
+
+    def post(self,request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        if not username or not password:
+            return Response({"Error":"Invalid Login data"}, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(username=username, password=password)
+        if user is None:
+            return Response({"error":"Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        refresh = RefreshToken.for_user(user)
+        res = JsonResponse({
+            "message":"Successfully logged in",
+
+        },status=status.HTTP_200_OK)
+        access = str(refresh.access_token)
+        res.set_cookie(
+            key='access',
+            value=access,
+            httponly=True,
+            # secure=True, ##add this in production (HTTPS)
+            samesite="Lax",
+            max_age=300000
+        )
+        res.set_cookie(
+            key='refresh',
+            value=str(refresh),
+            httponly=True,
+            # secure=True, ##add this in production (HTTPS)
+            samesite="Lax",
+            max_age=(300000*100)
+        )
+        return res
 
 
 
-#         {
-#     "message": "Todo succesfully created!!",
-#     "todo": {
-#         "id": "0000-0000-0000-0000-0000-1111",
-#         "title": "Integrate Django With React", SAMPLE FOR HOW TODO SHOULD LOOK
-#         "notes": "",
-#         "important": "True",
-#         "due_by": "2025-08-21",
-#         "created_at": "2025-08-21"
-#     }
-# }
+class LogoutView(APIView):
+    permission_classes=[AllowAny]
+    @csrf_exempt
+    def post(self,request):
+        res = JsonResponse({"message":"Successfully logged out"}, status=status.HTTP_200_OK)
+        refreshtoken = request.COOKIES.get("refresh")
+        if refreshtoken:
+            token = RefreshToken(refreshtoken)
+            token.blacklist()
+
+        res.delete_cookie("access")
+        res.delete_cookie("refresh")
+
+        return res
+
+
+
+class UserView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        return Response({
+            "username":request.user.username,
+            "email":request.user.email
+        }, status=status.HTTP_200_OK)

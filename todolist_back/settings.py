@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-@--24!tda*41a*+^p)8v$tngqxaxyhmqi-9sky*p#upms3u%qk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -41,11 +41,16 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist'
 ]
 REST_FRAMEWORK = {
+        "DEFAULT_PERMISSION_CLASSES":[
+        'rest_framework.permissions.AllowAny'
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES':(
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+        'todolist.auth.CookieJWTAuthentication',
+    ),
+
 }
 
 MIDDLEWARE = [
