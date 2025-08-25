@@ -53,30 +53,30 @@ class AddTodoView(APIView):
             return Response({"message":"Something went wrong", "error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
-def getTodos(request):
-    if request.method == 'GET':
+class GetTodosView(APIView):
+    permission_classes=[AllowAny]
+    def get(self,request):
         try:
-            todos = Todo.objects.all().values("id","title", "important","due_by","created_at","notes", "completed")
-            return JsonResponse(list(todos), safe=False, status=200)
-        
+            todos = Todo.objects.filter(user = request.user).values()
+            return Response(list(todos), status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error":"User does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
-            return JsonResponse({"error":e}, status=400)
-    else:
-        return JsonResponse({"message":"Invalid Request Type"})
-        
-def getCompletedTodos(request):
-    if request.method == 'GET':
+            return Response({"Error":"Something went wrong"})
+
+class getCompletedTodosView(APIView):
+    permission_classes=[AllowAny]
+    def get(self,request):
         try:
-            todos = Todo.objects.filter(completed=True).values("id","title", "important","due_by","created_at","notes", "completed")
-            return JsonResponse(list(todos), safe=False, status=200)
-        
+            todos = Todo.objects.filter(user = request.user, completed=True).values("id","title", "important","due_by","created_at","notes", "completed")
+            return Response(list(todos), status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error":"User does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
-            return JsonResponse({"error":e}, status=400)
-    else:
-        return JsonResponse({"message":"Invalid Request Type"})
+            return Response({"Error":"Something went wrong"})
+
+
+
 
 class EditView(APIView):
     permission_classes=[IsAuthenticated]
@@ -85,28 +85,53 @@ class EditView(APIView):
             data = request.data
             id = id
             todo = Todo.objects.get(id=id)
-            todo.title = data.get("title", todo.title)
-            todo.important = data.get("important", todo.important)
-            todo.notes = data.get("notes", todo.notes)
-            todo.due_by = data.get("due_by", todo.due_by)
-            todo.completed = data.get("completed", todo.completed)
-            todo.save()
-            return Response({
-                "message":"Todo Successfully Edited",
-                "todo":{
-                     "id":todo.id,
-                    "title":todo.title,
-                    "notes":todo.notes,
-                    "important":todo.important,
-                    "due_by":todo.due_by,
-                    "user":request.user.username
-                }
-            })
+            if(request.user.id == todo.user.id):
+                todo.title = data.get("title", todo.title)
+                todo.important = data.get("important", todo.important)
+                todo.notes = data.get("notes", todo.notes)
+                todo.due_by = data.get("due_by", todo.due_by)
+                todo.completed = data.get("completed", todo.completed)
+                todo.save()
+                return Response({
+                    "message":"Todo Successfully Edited",
+                    "todo":{
+                        "id":todo.id,
+                        "title":todo.title,
+                        "notes":todo.notes,
+                        "important":todo.important,
+                        "due_by":todo.due_by,
+                        "user":request.user.username
+                    }
+                })
+            else:
+                return Response({"message":"You do not have permission to edit this"}, status.HTTP_403_FORBIDDEN)
         except Todo.DoesNotExist:
             return Response({"message":"Todo does not exist"}, status=status.HTTP_404_DOES_NOT_EXIST)
         except Exception as e:
             return Response({"Error":"Something went wrong"}, status=status.HTTP_401_BAD_REQUEST)
+    def get(self, request, id):
+        try:
+            id = id
+            todo = Todo.objects.get(id=id)
+            if(request.user.id == todo.user.id):
+                return JsonResponse({
+                    "message":"Grabbing data",
+                    "todo":{
+                        "id":todo.id,
+                        "title":todo.title,
+                        "notes":todo.notes,
+                        "important":todo.important,
+                        "due_by":todo.due_by,
+                        "user":request.user.username
+                    }
+                })
+            else:
+                return Response({"message":"You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        except Todo.DoesNotExist:
+            return JsonResponse({"error":"Todo does not exist!"})
 
+        except Exception as e:
+            return JsonResponse({"error":e})
 
 
 class DeleteView(APIView):
@@ -115,8 +140,11 @@ class DeleteView(APIView):
     def delete(self,request, id):
         try:
             todo = Todo.objects.get(id=id)
-            todo.delete()
-            return Response({"message":"Todo Deleted Successfully"}, status=status.HTTP_200_OK)    
+            if(request.user.id == todo.id):
+                todo.delete()
+                return Response({"message":"Todo Deleted Successfully"}, status=status.HTTP_200_OK)    
+            else:
+                return Response({"message":"You do not have permission"}, status.HTTP_403_FORBIDDEN)
         except Todo.DoesNotExist:
             return Response({"message":"Todo does not exist"}, status=status.HTTP_404_DOES_NOT_EXIST)
         except Exception as e:
@@ -125,7 +153,7 @@ class DeleteView(APIView):
 def getTodo(request,id):
     if request.method=="GET":
         try:
-            currTodo=Todo.objects.get(id=id)
+            currTodo=Todo.objects.get(id=id).values()
             
             return JsonResponse({
                     "todo": {
@@ -157,7 +185,7 @@ def getCSRF(request):
 
 
 class RegisterView(APIView):
-    permission_classes=[IsAuthenticated]
+    permission_classes=[AllowAny]
 
     def post(self,request):
         if request.method == "POST":
@@ -236,10 +264,9 @@ class LogoutView(APIView):
 
 
 class UserView(APIView):
-    permission_classes=[IsAuthenticated]
+    permission_classes=[AllowAny]
 
     def get(self,request):
-        return Response({
-            "username":request.user.username,
-            "email":request.user.email
-        }, status=status.HTTP_200_OK)
+        if request.user.is_authenticated:
+            return Response({"auth":"true"})
+        return Response({"auth":"false"})
