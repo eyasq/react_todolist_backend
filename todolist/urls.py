@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from . import views
-from .views import LogoutView, RegisterView, LoginView, UserView
+from .views import LogoutView, RegisterView, LoginView, UserView, AddTodoView, EditView, DeleteView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -26,10 +26,10 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", views.index),
-    path("api/post", views.add_todo),
+    path("api/post", AddTodoView.as_view(), name="add"),
     path("api/get",views.getTodos),
-    path("api/delete/<str:id>",views.deleteTodo),
-    path("api/edit/<str:id>",views.editTodo),
+    path("api/delete/<str:id>",DeleteView.as_view(), name='delete'),
+    path("api/edit/<str:id>",EditView.as_view(), name='edit'),
     path("api/get/completed", views.getCompletedTodos),
     path("api/get/<str:id>", views.getTodo),
     path("api/getCSRF", views.getCSRF),
