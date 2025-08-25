@@ -23,43 +23,7 @@ def index(request):
         return JsonResponse({"res":"Request Method was get"})
     else:
         return HttpResponse("Not a get")
-    
-# @login_required
-# def add_todo(request):
-#     if request.user:
-#         if request.method == "POST":
-#             try:
-#                 data = json.loads(request.body.decode("utf-8"))
 
-#                 todo = Todo.objects.create(
-#                     id = data.get("id"),
-#                     title = data.get("title"),
-#                     notes = data.get("notes" , ""),
-#                     important=data.get("important", False),
-#                     due_by = data.get("due_by"),
-#                     user = request.user
-#                     )
-#                 return JsonResponse({
-#                     "message":"Todo succesfully created!!",
-#                     "todo":{
-#                         "id":todo.id,
-#                         "title":todo.title,
-#                         "notes":todo.notes,
-#                         "important":todo.important,
-#                         "due_by":todo.due_by,
-#                         "created_at":todo.created_at,
-#                         "owener": todo.user
-#                     }
-#                 }, status=201)
-
-#             except Exception as e:
-#                 return JsonResponse({"error":str(e)}, status=400)
-#         else:
-#             return JsonResponse({"error":"invalid request method"}, status=405)
-#     else:
-#         return JsonResponse({
-#             "error":"Not Signed In"
-#         })    
 class AddTodoView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -143,48 +107,7 @@ class EditView(APIView):
         except Exception as e:
             return Response({"Error":"Something went wrong"}, status=status.HTTP_401_BAD_REQUEST)
 
-# def editTodo(request,id):
-#     if request.method == 'PUT': 
-#         try:
-#             data = json.loads(request.body.decode("utf-8"))
-#             id = id
-#             todo = Todo.objects.get(id=id)
-#             todo.title = data.get('title', todo.title)
-#             todo.notes = data.get('notes', todo.notes)
-#             todo.important = data.get('important', todo.important)
-#             todo.due_by = data.get('due_by', todo.due_by)
-#             todo.completed = data.get('completed', todo.completed)
-#             todo.save()
-#             return JsonResponse({
-#                 "message":"Todo succesffully updated",
-#                 "todo":{
-#                     "id":todo.id,
-#                     "title":todo.title,
-#                     "notes":todo.notes,
-#                     "important":todo.important,
-#                     "due_by":todo.due_by,
-#                     "completed":todo.completed
-#                 }
-#             }, status=200)
-#         except Todo.DoesNotExist:
-#             return JsonResponse({"error":"Todo does not exist"}, status=404)
-#         except Exception as e:
-#             return JsonResponse({"error":str(e)}, status=400)
-#     else:
-#         return JsonResponse({"message":"Invalid Request Type"},status=405)
 
-# def deleteTodo(request, id):
-#     if request.method=="DELETE":
-#         try:
-#             todo = Todo.objects.get(id = id)
-#             todo.delete()
-#             return JsonResponse({"message":"Record Successfully Deleted"}, status = 200)
-#         except Todo.DoesNotExist:
-#             return JsonResponse({"error":"Todo does not exist"}, status=404)
-#         except Exception as e:
-#             return JsonResponse({"message":e})
-#     else:
-#         return JsonResponse({"message":"Invalid request Type"})
 
 class DeleteView(APIView):
     permission_classes=[IsAuthenticated]
